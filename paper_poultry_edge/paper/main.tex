@@ -25,7 +25,7 @@ Email: fatihalmumtaz76@student.cs.unida.gontor.ac.id}
 \maketitle
 
 \begin{abstract}
-Poultry fecal disease detection using deep learning has demonstrated promising accuracy, yet existing approaches predominantly rely on cloud-based inference with heavy architectures that are impractical for resource-constrained farm environments. This paper presents a systematic characterization of three lightweight convolutional neural network architectures---MobileNetV2, ShuffleNetV2, and EfficientNet-B0---for classifying poultry fecal images into four disease categories: Coccidiosis, Salmonellosis, Newcastle Disease, and Healthy. We evaluate each architecture under post-training INT8 quantization and construct an accuracy-latency Pareto frontier on consumer CPU hardware. Our results demonstrate that all three architectures achieve over 97\% test accuracy through ImageNet transfer learning, with EfficientNet-B0 achieving the highest accuracy (98.3\%) and MobileNetV2 offering the best latency-accuracy trade-off (1.85\,ms FP32, 541\,FPS). Critically, we find that INT8 quantization on CPU introduces 6--30$\times$ latency overhead due to dequantization costs without hardware acceleration, contradicting the common assumption that quantization always improves inference speed. Grad-CAM visualizations reveal that each architecture learns distinct feature representations from fecal images. These findings provide practical deployment guidelines for edge-based poultry disease detection in resource-constrained farming environments.
+Poultry fecal disease detection using deep learning has demonstrated promising accuracy, yet existing approaches predominantly rely on cloud-based inference with heavy architectures that are impractical for resource-constrained farm environments. This paper presents a systematic characterization of three lightweight convolutional neural network architectures---MobileNetV2, ShuffleNetV2, and EfficientNet-B0---for classifying poultry fecal images into four disease categories: Coccidiosis, Salmonellosis, Newcastle Disease, and Healthy. Experiments use the Machuve \textit{et al.} dataset as distributed via HuggingFace \texttt{Dianyo/poultry-fecal-fl} (8,770 images: 5,614 train / 1,402 val / 1,754 test, augmented from the original Zenodo 6,812). We evaluate each architecture under post-training INT8 dynamic quantization (ONNX Runtime) and construct an accuracy-latency Pareto frontier on Intel i5-12400F CPU (200 runs, 10 warmup, CPUExecutionProvider). All three architectures achieve over 97\% FP32 test accuracy through ImageNet transfer learning, with EfficientNet-B0 highest at 98.18\% and MobileNetV2 best latency-accuracy trade-off (1.85\,ms FP32, 540.8\,FPS). Critically, INT8 PTQ introduces 6.4--30.1$\times$ latency overhead on CPU due to dequantization costs, and exhibits architecture-dependent accuracy: MobileNetV2 (+0.23\%) and ShuffleNetV2 (+0.06\%) are robust, while EfficientNet-B0 collapses from 98.18\% to 35.46\% (62.7\% drop, Salmonellosis 0.53\%) due to squeeze-and-excitation sensitivity. Grad-CAM visualizations reveal distinct feature representations per architecture. These findings provide hardware-aware deployment guidelines for edge-based poultry disease detection.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -63,7 +63,7 @@ INT8 quantization reduces model size by representing weights with 8-bit integers
 \section{Methodology}
 
 \subsection{Dataset}
-We utilize the Machuve~\textit{et al.}~dataset~\cite{machuve22} comprising PCR-verified fecal images from commercial poultry farms in Tanzania. After processing, the dataset contains 8,770 images split into training (5,614), validation (1,402), and test (1,754) sets with stratified sampling. Four classes are represented: Coccidiosis (30.7\%), Healthy (29.2\%), Salmonella (32.5\%), and Newcastle Disease (8.3\%). The significant class imbalance in NCD (only 8.3\% of data) is noted as a limitation and analyzed in our per-class evaluation.
+We utilize the Machuve~\textit{et al.}~dataset~\cite{machuve22} comprising PCR-verified fecal images from commercial poultry farms in Tanzania, as distributed via HuggingFace~\texttt{Dianyo/poultry-fecal-fl}. The HF split contains 8,770 images (5,614 train / 1,402 val / 1,754 test, stratified) derived from the original Zenodo 4628934 release (6,812 images: cocci 2,103, healthy 2,057, salmo 2,276, ncd 376), with augmentation accounting for the 1,958-image difference. Four classes are represented: Coccidiosis (30.7\%), Healthy (29.2\%), Salmonella (32.5\%), and Newcastle Disease (8.3\% raw; 5.5\% of Zenodo). The significant class imbalance in NCD is noted as a limitation and analyzed via per-class INT8 evaluation. Image size 224$\times$224, ImageNet normalization.
 
 \subsection{Model Architectures}
 Three lightweight architectures are evaluated, all pre-trained on ImageNet with classification heads replaced for 4-class output:
@@ -118,14 +118,14 @@ Table~\ref{tab:quantization} presents the quantization analysis. All architectur
 \multirow{2}{*}{Model} & \multicolumn{2}{c}{Size (MB)} & \multicolumn{2}{c}{Latency (ms)} & \multirow{2}{*}{Slowdown} \\
  & FP32 & INT8 & FP32 & INT8 & \\
 \midrule
-MobileNetV2 & 8.48 & 2.30 & \textbf{1.85} & 55.8 & 30.2$\times$ \\
-ShuffleNetV2 & 4.89 & \textbf{1.47} & 3.17 & \textbf{20.3} & \textbf{6.4}$\times$ \\
-EfficientNet-B0 & 15.3 & 4.16 & 3.50 & 80.7 & 23.1$\times$ \\
+MobileNetV2 & 8.48 & 2.30 & \textbf{1.85} & 55.75 & 30.1$\times$ \\
+ShuffleNetV2 & 4.89 & \textbf{1.47} & 3.17 & 20.34 & 6.4$\times$ \\
+EfficientNet-B0 & 15.3 & 4.16 & 3.50 & 80.66 & 23.0$\times$ \\
 \bottomrule
 \end{tabular}
 \end{table}
 
-\textbf{Critical finding:} INT8 quantization on CPU introduces 6.4--30.2$\times$ latency overhead compared to FP32. This is because ONNX Runtime's CPU Execution Provider must perform dequantization (INT8$\rightarrow$FP32) before each matrix multiplication, negating the theoretical benefits of lower-precision arithmetic. This finding aligns with ONNX Runtime documentation~\cite{onnxruntime2024} and community reports~\cite{onnxruntime12854}, but is the first empirical demonstration in the poultry disease detection domain.
+\textbf{Critical finding:} INT8 quantization on CPU introduces 6.4--30.1$\times$ latency overhead compared to FP32. This is because ONNX Runtime's CPU Execution Provider must perform dequantization (INT8$\rightarrow$FP32) before each matrix multiplication, negating the theoretical benefits of lower-precision arithmetic. This finding aligns with ONNX Runtime documentation~\cite{onnxruntime2024} and community reports~\cite{onnxruntime12854}, but is the first empirical demonstration in the poultry disease detection domain.
 
 ShuffleNetV2 exhibits the most resilient quantization behavior (6.4$\times$ slowdown vs.\ 30.2$\times$ for MobileNetV2). We attribute this to ShuffleNetV2's architectural homogeneity---channel shuffle operations are non-parametric and less sensitive to weight precision degradation, while MobileNetV2's depthwise separable convolutions create quantization-sensitive bottlenecks.
 
@@ -185,7 +185,7 @@ This paper presents the first systematic characterization of lightweight CNN arc
 
 \begin{enumerate}
     \item All three lightweight architectures achieve over 97\% accuracy through ImageNet transfer learning, with EfficientNet-B0 reaching 98.3\%.
-    \item INT8 PTQ on CPU introduces 6.4--30.2$\times$ latency overhead, demonstrating that quantization benefits are hardware-dependent and should not be assumed universal.
+    \item INT8 PTQ on CPU introduces 6.4--30.1$\times$ latency overhead, challenging the assumption that quantization universally improves inference speed.
     \item ShuffleNetV2 exhibits the most resilient quantization behavior (6.4$\times$ slowdown) due to architectural homogeneity.
     \item The Pareto frontier identifies MobileNetV2 as optimal for latency-critical deployment (1.85\,ms, 541\,FPS) and ShuffleNetV2 INT8 for memory-constrained scenarios (1.47\,MB).
 \end{enumerate}
