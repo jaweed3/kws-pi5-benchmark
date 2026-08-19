@@ -258,7 +258,7 @@ def get_model(name, num_classes=4, pretrained=True):
         model = models.shufflenet_v2_x1_0(pretrained=pretrained)
         model.fc = nn.Linear(model.fc.in_features, num_classes)
 
-    elif name == "efficientnet_lite0":
+    elif name == "efficientnet_b0":
         # EfficientNet-Lite0 via torchvision
         model = models.efficientnet_b0(pretrained=pretrained)
         # Modify classifier for 4 classes
@@ -444,7 +444,7 @@ def train_model(model_name, model, train_loader, val_loader, config):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--model", type=str, default="all",
-                       choices=["mobilenetv2", "shufflenetv2", "efficientnet_lite0", "all"])
+                       choices=["mobilenetv2", "shufflenetv2", "efficientnet_b0", "all"])
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--batch-size", type=int, default=32)
     parser.add_argument("--lr", type=float, default=1e-4)
@@ -469,7 +469,7 @@ def main():
     models_to_train = {
         "mobilenetv2": "mobilenetv2",
         "shufflenetv2": "shufflenetv2",
-        "efficientnet_lite0": "efficientnet_lite0"
+        "efficientnet_b0": "efficientnet_b0"
     }
 
     if args.model != "all":
@@ -620,7 +620,7 @@ def export_to_onnx(model_name, input_shape=(1, 3, 224, 224), output_dir="models/
     return output_path
 
 if __name__ == "__main__":
-    models = ["mobilenetv2", "shufflenetv2", "efficientnet_lite0"]
+    models = ["mobilenetv2", "shufflenetv2", "efficientnet_b0"]
     for model_name in models:
         print(f"\nExporting {model_name}...")
         export_to_onnx(model_name)
@@ -762,7 +762,7 @@ def evaluate_onnx(onnx_path, data_dir, image_size=224, num_samples=None):
 
 
 if __name__ == "__main__":
-    models = ["mobilenetv2", "shufflenetv2", "efficientnet_lite0"]
+    models = ["mobilenetv2", "shufflenetv2", "efficientnet_b0"]
     calib_dir = "data/split/val"
     test_dir = "data/split/test"
     results = {}
@@ -959,7 +959,7 @@ def qat_train(model_name, epochs=10, lr=1e-5):
 
 
 if __name__ == "__main__":
-    models = ["mobilenetv2", "shufflenetv2", "efficientnet_lite0"]
+    models = ["mobilenetv2", "shufflenetv2", "efficientnet_b0"]
     results = {}
 
     for model_name in models:
@@ -1065,9 +1065,9 @@ def benchmark_all():
         ("shufflenetv2", "FP32", "models/onnx/shufflenetv2.onnx"),
         ("shufflenetv2", "PTQ_Dyn", "models/ptq/shufflenetv2_ptq_dynamic.onnx"),
         ("shufflenetv2", "PTQ_Static", "models/ptq/shufflenetv2_ptq_static.onnx"),
-        ("efficientnet_lite0", "FP32", "models/onnx/efficientnet_lite0.onnx"),
-        ("efficientnet_lite0", "PTQ_Dyn", "models/ptq/efficientnet_lite0_ptq_dynamic.onnx"),
-        ("efficientnet_lite0", "PTQ_Static", "models/ptq/efficientnet_lite0_ptq_static.onnx"),
+        ("efficientnet_b0", "FP32", "models/onnx/efficientnet_b0.onnx"),
+        ("efficientnet_b0", "PTQ_Dyn", "models/ptq/efficientnet_b0_ptq_dynamic.onnx"),
+        ("efficientnet_b0", "PTQ_Static", "models/ptq/efficientnet_b0_ptq_static.onnx"),
     ]
 
     all_results = {}
@@ -1216,7 +1216,7 @@ def get_target_layer(model_name, model):
         return model.features[-1]
     elif model_name == "shufflenetv2":
         return model.conv5
-    elif model_name == "efficientnet_lite0":
+    elif model_name == "efficientnet_b0":
         return model.features[-1]
     return None
 
@@ -1284,7 +1284,7 @@ if __name__ == "__main__":
     from train import get_model
 
     class_names = ["cocci", "healthy", "ncd", "salmo"]
-    models_to_analyze = ["mobilenetv2", "shufflenetv2", "efficientnet_lite0"]
+    models_to_analyze = ["mobilenetv2", "shufflenetv2", "efficientnet_b0"]
 
     os.makedirs("figures", exist_ok=True)
 
@@ -1311,7 +1311,7 @@ python3 scripts/gradcam.py 2>&1 | tee logs/phase7_gradcam.log
 
 ```bash
 ls -la figures/
-# Should contain: gradcam_mobilenetv2.png, gradcam_shufflenetv2.png, gradcam_efficientnet_lite0.png
+# Should contain: gradcam_mobilenetv2.png, gradcam_shufflenetv2.png, gradcam_efficientnet_b0.png
 ```
 
 ---
@@ -1366,7 +1366,7 @@ def run_sensitivity_experiment():
     """Train each model at different data fractions."""
 
     fractions = [0.25, 0.50, 0.75, 1.00]
-    models_to_test = ["mobilenetv2", "efficientnet_lite0"]  # Focus on 2 key models
+    models_to_test = ["mobilenetv2", "efficientnet_b0"]  # Focus on 2 key models
     results = {}
 
     for model_name in models_to_test:
@@ -1528,7 +1528,7 @@ def plot_pareto_frontier(results, output_dir="figures"):
 
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    markers = {"mobilenetv2": "o", "shufflenetv2": "s", "efficientnet_lite0": "^"}
+    markers = {"mobilenetv2": "o", "shufflenetv2": "s", "efficientnet_b0": "^"}
     colors = {"FP32": "blue", "PTQ_Dyn": "green", "PTQ_Static": "red"}
 
     for key, res in results["benchmark"].items():
