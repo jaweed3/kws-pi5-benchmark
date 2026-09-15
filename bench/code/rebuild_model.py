@@ -69,8 +69,15 @@ def find(ts, prefix):
     raise KeyError(prefix)
 
 
-def main():
-    ts = load_tflite_tensors(SRC)
+def build_dscnn_keras(src=SRC):
+    """Rebuild the verified true-float32 DS-CNN Keras model from a flatbuffer.
+
+    Dequantizes the int8 conv kernels of the published (mixed-precision)
+    artifact and assembles the 9 fused conv-bias-ReLU blocks + GAP + dense.
+    Returns the compiled Keras model (linear dense head, no softmax --
+    apply softmax when comparing against TFLite outputs).
+    """
+    ts = load_tflite_tensors(src)
 
     # ---- build Keras model: conv+BN(fused)+ReLU x9, avgpool, flatten, dense
     inputs = Input(shape=(49, 10, 1), name="input_1")
@@ -108,6 +115,11 @@ def main():
     dense.set_weights([np.transpose(dk, (1, 0)), db])
     model = Model(inputs, x, name="kws_ref_fp32")
     model.summary()
+    return model
+
+
+def main():
+    model = build_dscnn_keras(SRC)
 
     # ---- verify against TFLite interpreter
     interp = tfl.Interpreter(model_path=SRC)
