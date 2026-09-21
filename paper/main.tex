@@ -107,6 +107,13 @@ Evaluation used the official test split of Speech Commands v2, restricted to the
 
 Latency was measured with 1{,}000 warmup passes followed by 1{,}000 timed passes per configuration, executed sequentially (never interleaved) on a single CPU thread, with features precomputed so that measurement isolates inference. Outliers beyond 1.5$\times$IQR were removed from each sample, and 95\% confidence intervals were obtained by 10{,}000-resample bootstrap with seed 42. The Raspberry Pi's temperature and process RSS were sampled before and after each configuration's pass. Every figure reported in Section~IV was reproduced across at least two independent runs, and we report the canonical run in the tables.
 
+\subsection{Power Measurement}
+\label{sec:power}
+
+On-board power consumption was estimated via the Raspberry Pi 5's integrated power-management IC (PMIC), accessed through \texttt{vcgencmd pmic\_read\_adc}. This interface reports instantaneous current and voltage across 12 on-board voltage rails (CPU core, DDR, WiFi, HDMI, and auxiliary supplies). The measurement protocol consisted of two phases: (1)~a 30-second idle baseline with no inference, sampling the PMIC at $\sim$20~Hz to obtain $P_\text{idle}$; and (2)~a continuous inference loop with 10{,}000 passes over the test set while a background thread sampled the PMIC concurrently, yielding $P_\text{load}$. The per-inference energy was then estimated as $E = (P_\text{load} - P_\text{idle}) \times t_\text{lat}$, where $t_\text{lat}$ is the measured mean latency.
+
+This method captures SoC-level power consumption only---it excludes USB peripherals, NVMe drives, and HAT modules that draw from the 5V rail upstream of the PMIC. The 20~Hz sampling rate is insufficient for models whose inference completes in under 0.1~ms (fewer than 10 PMIC samples during the load phase), so the DNN's energy figure is omitted from the results. For the remaining three architectures, the PMIC provides a consistent, automated measurement that is sufficient for relative comparison across model families. The CPU governor was pinned to \texttt{performance} (2.4~GHz, all cores) for the entire measurement to remove frequency scaling as a confound.
+
 \section{Results and Discussion}
 
 \subsection{Accuracy}
@@ -171,6 +178,36 @@ CRNN & 0.2586 & 0.1016 & 0.3609 & 1.40 \\
 \label{fig:lat}
 \end{figure}
 
+\subsection{Energy}
+\label{sec:energy}
+
+Table~\ref{tab:energy} reports per-inference energy consumption estimated via the on-board PMIC (Section~III-E). The CPU governor was pinned to \texttt{performance} (2.4~GHz) for all measurements. The DNN is omitted because its sub-0.1~ms inference time yielded fewer than 10 PMIC samples during the load phase---insufficient for a reliable power estimate.
+
+\begin{table}[t]
+\caption{Per-inference energy on the Raspberry Pi 5 (performance governor, 2.4~GHz). $P_\Delta$ is the mean on-board SoC power during inference minus the idle baseline. Energy $E = P_\Delta \times t_\text{lat}$. The DNN is omitted due to insufficient PMIC sampling during its sub-0.1~ms inference (Section~III-E).}
+\label{tab:energy}
+\centering
+{\footnotesize
+\setlength{\tabcolsep}{3pt}
+\resizebox{\columnwidth}{!}{%
+\begin{tabular}{lcccc}
+\toprule
+Model & Runtime & $P_\Delta$ (W) & $t_\text{lat}$ (ms) & $E$ (mJ) \\
+\midrule
+DS-CNN & TFLite fp32 & 1.59 & 0.217 & 0.34 \\
+DS-CNN & ONNX fp32  & 1.18 & 0.448 & 0.53 \\
+CRNN   & TFLite fp32 & 1.85 & 0.274 & 0.51 \\
+CRNN   & ONNX fp32  & 1.58 & 0.494 & 0.78 \\
+LSTM   & TFLite fp32 & 1.81 & 0.406 & 0.74 \\
+LSTM   & ONNX fp32  & 1.31 & 0.725 & 0.95 \\
+\bottomrule
+\end{tabular}
+}
+}
+\end{table}
+
+Two patterns emerge. First, TensorFlow Lite consistently draws more power ($P_\Delta$) than ONNX Runtime for the same model---1.59 versus 1.18~W for the DS-CNN, 1.85 versus 1.58~W for the CRNN---yet its faster execution often yields lower per-inference energy. The DS-CNN under TensorFlow Lite consumes 0.34~mJ per inference, 35\% less than ONNX Runtime's 0.53~mJ, despite drawing 35\% more power. Second, the energy ranking across architectures mirrors the latency ranking: the DS-CNN is the most energy-efficient (0.34~mJ), the CRNN is intermediate (0.51~mJ), and the LSTM is the least efficient (0.74~mJ) among TensorFlow Lite configurations. These figures are approximate---the PMIC captures on-board SoC power only and excludes USB peripherals---but they are sufficient to establish that the latency advantage of TensorFlow Lite translates directly into an energy advantage for always-on workloads where inference frequency is fixed.
+
 \subsection{Discussion}
 
 Figure~\ref{fig:accparams} places the accuracy results in the model-size dimension: the CRNN achieves the highest accuracy (92.56\%) with 56.8k parameters---roughly two and a half times the DS-CNN's size---while the dense network spends the most parameters (88.4k) for the lowest accuracy (79.63\%), and the LSTM reaches 90.48\% with the fewest (20.0k). On this edge-relevant frontier, the recurrent and hybrid architectures dominate the dense baseline on both axes.
@@ -190,7 +227,7 @@ Several factors bound the generalizability of these results: a single board; sin
 
 \section{Conclusion}
 
-We benchmarked four keyword-spotting architectures---DS-CNN, DNN, LSTM, and CRNN---across TensorFlow Lite (float32 and int8) and ONNX Runtime (float32) on a Raspberry Pi 5, under a controlled protocol with verified preprocessing and a faithful float32 reconstruction of the mixed-precision reference artifact. At top-1 accuracies of 79.6--92.6\% over 4{,}074 Speech Commands v2 test clips, the float32 runtimes were numerically interchangeable, but their speed differed by architecture: ONNX Runtime was faster only for the convolution-heavy DS-CNN (19.2\%), while TensorFlow Lite was 1.40--2.09$\times$ faster for the dense, LSTM, and CRNN models, and full-int8 quantization accelerated the dense, LSTM, and CRNN models (2.3--2.5$\times$) at an accuracy cost that ranged from negligible to 3.05 points for the LSTM (with a full-int8 DS-CNN added in this revision). The choice of inference runtime is therefore an architecture-aware decision on Arm single-board computers: a benchmark against the default model alone is not a safe basis for generalizing about runtimes, and the fastest configuration for one model family may be the slowest for another.
+We benchmarked four keyword-spotting architectures---DS-CNN, DNN, LSTM, and CRNN---across TensorFlow Lite (float32 and int8) and ONNX Runtime (float32) on a Raspberry Pi 5, under a controlled protocol with verified preprocessing, a faithful float32 reconstruction of the mixed-precision reference artifact, and on-board power measurement via the PMIC. At top-1 accuracies of 79.6--92.6\% over 4{,}074 Speech Commands v2 test clips, the float32 runtimes were numerically interchangeable, but their speed differed by architecture: ONNX Runtime was faster only for the convolution-heavy DS-CNN (19.2\%), while TensorFlow Lite was 1.40--2.09$\times$ faster for the dense, LSTM, and CRNN models, and full-int8 quantization accelerated the dense, LSTM, and CRNN models (2.3--2.5$\times$) at an accuracy cost that ranged from negligible to 3.05 points for the LSTM (with a full-int8 DS-CNN added in this revision). Energy measurements confirmed that TensorFlow Lite's latency advantage translates into an energy advantage: the DS-CNN under TensorFlow Lite consumed 0.34~mJ per inference, 35\% less than ONNX Runtime's 0.53~mJ, despite drawing more instantaneous power. The choice of inference runtime is therefore an architecture-aware decision on Arm single-board computers: a benchmark against the default model alone is not a safe basis for generalizing about runtimes, and the fastest configuration for one model family may be the slowest for another.
 
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
