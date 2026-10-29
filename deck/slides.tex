@@ -1,0 +1,452 @@
+\documentclass[aspectratio=169, 10pt]{beamer}
+
+% --- Theme and Typography ---
+\usetheme{Madrid}
+\usecolortheme{whale}
+
+\usepackage{booktabs}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,raster}
+\usepackage{amsmath,amssymb}
+\usepackage{graphicx}
+\usepackage{microtype}
+\usepackage{array}
+\usepackage{tikz}
+
+% --- Color Palette (Modern Academic Tech) ---
+\definecolor{NavyDark}{HTML}{0D1B2A}
+\definecolor{NavyBlue}{HTML}{1B263B}
+\definecolor{AccentBlue}{HTML}{415A77}
+\definecolor{HighlightCyan}{HTML}{00A896}
+\definecolor{AlertRed}{HTML}{E63946}
+\definecolor{SoftGray}{HTML}{F4F6F8}
+\definecolor{DarkText}{HTML}{1E293B}
+
+\setbeamercolor{palette primary}{bg=NavyDark,fg=white}
+\setbeamercolor{palette secondary}{bg=NavyBlue,fg=white}
+\setbeamercolor{palette tertiary}{bg=AccentBlue,fg=white}
+\setbeamercolor{structure}{fg=NavyBlue}
+\setbeamercolor{titlelike}{fg=NavyDark}
+\setbeamercolor{frametitle}{bg=NavyDark,fg=white}
+\setbeamercolor{background canvas}{bg=white}
+\setbeamercolor{normal text}{fg=DarkText}
+
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{footline}{
+  \leavevmode%
+  \hbox{%
+  \begin{beamercolorbox}[wd=.35\paperwidth,ht=2.5ex,dp=1ex,left,leftskip=1em]{author in head/foot}%
+    \usebeamerfont{author in head/foot}\textbf{Fatih Jawwad Al Mumtaz et al.} (UNIDA Gontor)
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.45\paperwidth,ht=2.5ex,dp=1ex,center]{title in head/foot}%
+    \usebeamerfont{title in head/foot}Benchmarking KWS on Raspberry Pi 5
+  \end{beamercolorbox}%
+  \begin{beamercolorbox}[wd=.20\paperwidth,ht=2.5ex,dp=1ex,right,rightskip=1em]{date in head/foot}%
+    \usebeamerfont{date in head/foot}\insertframenumber{} / \inserttotalframenumber
+  \end{beamercolorbox}}%
+  \vskip0pt%
+}
+
+% --- Custom Info Boxes ---
+\newtcolorbox{statbox}[2][]{
+  colback=SoftGray,colframe=NavyBlue,
+  fonttitle=\bfseries\small,title=#2,
+  arc=2mm,boxrule=1pt,left=4pt,right=4pt,top=4pt,bottom=4pt,#1
+}
+\newtcolorbox{alertbox}[2][]{
+  colback=AlertRed!5,colframe=AlertRed,
+  fonttitle=\bfseries\small,title=#2,
+  arc=2mm,boxrule=1pt,left=4pt,right=4pt,top=4pt,bottom=4pt,#1
+}
+\newtcolorbox{keybox}[2][]{
+  colback=HighlightCyan!6,colframe=HighlightCyan,
+  fonttitle=\bfseries\small,title=#2,
+  arc=2mm,boxrule=1pt,left=4pt,right=4pt,top=4pt,bottom=4pt,#1
+}
+
+% =============================================================================
+% METADATA
+% =============================================================================
+\title[\textbf{Benchmarking KWS on Raspberry Pi 5}]{%
+  \textbf{Benchmarking Keyword Spotting Architectures across TensorFlow Lite and ONNX Runtime on a Raspberry Pi 5}}
+\subtitle{\small 2026 8th International Conference on Artificial Intelligence and Information Technology (ICAITech)}
+
+\author[\textbf{Fatih \& Amirul}]{%
+  \textbf{Fatih Jawwad Al Mumtaz}$^{1}$ \and \textbf{Amirul Al Aziz}$^{2}$}
+
+\institute[]{
+  $^{1}$Department of Informatics \quad $^{2}$Dept. of Agricultural Industrial Technology\\
+  Faculty of Science and Technology, Universitas Darussalam Gontor, Ponorogo, Indonesia\\[0.8ex]
+  \texttt{\footnotesize fatihalmumtaz76@student.cs.unida.gontor.ac.id \quad amirulalaziz57@student.tip.unida.gontor.ac.id}\\[1ex]
+  \textbf{\footnotesize Zenodo DOI: 10.5281/zenodo.23765521 \quad | \quad License: GNU AGPLv3}
+}
+\date{ICAITech 2026}
+
+\begin{document}
+
+% -----------------------------------------------------------------------------
+% SLIDE 1: Title
+% -----------------------------------------------------------------------------
+\begin{frame}[plain]
+  \titlepage
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 2: Motivation & Edge Context
+% -----------------------------------------------------------------------------
+\begin{frame}{Context \& Motivation: Always-On Voice at the Extreme Edge}
+\begin{columns}[T]
+  \begin{column}{0.50\textwidth}
+    \begin{statbox}{The Edge Keyword Spotting (KWS) Workload}
+      \small
+      \begin{itemize}\itemsep=0.15em
+        \item \textbf{Always-On Listening}: Continuously scans streaming audio for trigger keywords (e.g., wake-words).
+        \item \textbf{Canonical TinyML Benchmark}: Standard benchmark in the MLPerf Tiny suite (Banbury et al.).
+        \item \textbf{Hard Constraints}: Ultra-low latency ($<1$\,ms) and strictly bounded energy (mW).
+      \end{itemize}
+    \end{statbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \begin{keybox}{Why On-Device Inference? (SDG 3 Alignment)}
+      \small
+      \begin{itemize}\itemsep=0.15em
+        \item \textbf{No Cloud Dependency}: Operates robustly in rural clinics and low-connectivity environments.
+        \item \textbf{Strict Audio Privacy}: Voice and acoustic health data never leave the edge device.
+        \item \textbf{Target 3.8}: Low-cost voice assistive tech for elderly care and hands-free diagnostics.
+      \end{itemize}
+    \end{keybox}
+  \end{column}
+\end{columns}
+
+\vspace{0.2em}
+\begin{alertbox}{The Problem: Habitual Deployment Assumptions}
+  \small
+  TinyML literature routinely treats \textbf{TensorFlow Lite (TFLite)} as the default and fastest runtime on Arm processors. But on modern 64-bit Arm SBCs (like Cortex-A76 on Pi 5), \textbf{is TFLite universally faster than ONNX Runtime across diverse architectures?}
+\end{alertbox}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 3: The 4 Architectures & Reconstruction
+% -----------------------------------------------------------------------------
+\begin{frame}{Benchmark Model Zoo \& Front-End Standardization}
+All models consume an identical \textbf{$49 \times 10 \times 1$ MFCC frame} and output a \textbf{12-way softmax} (10 commands + silence + unknown).
+
+\vspace{0.2em}
+\begin{table}[h]
+\centering
+\scriptsize
+\begin{tabular}{lcl}
+\toprule
+\textbf{Model} & \textbf{Parameters} & \textbf{Structural Summary} \\
+\midrule
+\textbf{DS-CNN (MLPerf Ref.)} & 22,604 & $10\times4$ Conv (stride 2) + 4 $\times$ ($3\times3$ Depthwise + $1\times1$ Pointwise) + GAP + Dense \\
+\textbf{DNN (Baseline)}        & 88,396 & 4-layer MLP: 490--128--128--64--12 (lower-bound anchor) \\
+\textbf{LSTM}                 & 19,980 & Unrolled LSTM(64) over 49 time-steps + Dense head \\
+\textbf{CRNN}                 & 56,844 & $3\times3$ Conv$\times$2 + MaxPool$\times$2 + Unrolled GRU(64) + Dense \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{0.2em}
+\begin{columns}[T]
+  \begin{column}{0.49\textwidth}
+    \begin{statbox}{True Float32 DS-CNN Reconstruction}
+      The official MLPerf artifact is actually \textbf{mixed-precision} (int8 conv, fp32 remainder). We decompiled and reconstructed a true-fp32 Keras model to guarantee 100\% fair export to ONNX and TFLite.
+    \end{statbox}
+  \end{column}
+  \begin{column}{0.49\textwidth}
+    \begin{keybox}{Full INT8 Post-Training Quantization}
+      Re-quantized with 1,000 representative clips (seed 42) into \textbf{true full-int8} flatbuffers (float I/O, int8 internal GEMM/conv operators).
+    \end{keybox}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 4: Experimental Rigor on Raspberry Pi 5
+% -----------------------------------------------------------------------------
+\begin{frame}{Controlled Benchmark Protocol on Raspberry Pi 5}
+\begin{columns}[T]
+  \begin{column}{0.48\textwidth}
+    \begin{statbox}{Hardware \& OS Environment}
+      \begin{itemize}\itemsep=0.5em
+        \item \textbf{SoC}: Broadcom BCM2712 (Raspberry Pi 5)
+        \item \textbf{Cores}: Quad-core Arm Cortex-A76 @ 2.4 GHz
+        \item \textbf{RAM}: 8 GB LPDDR4X (synchronous)
+        \item \textbf{OS}: Debian 64-bit GNU/Linux (Kernel 6.18)
+        \item \textbf{Governor}: Pinned to \texttt{performance} (removes dynamic clock throttling confounds)
+        \item \textbf{Runtimes}: LiteRT (\texttt{ai-edge-litert 2.1.6}) vs \texttt{onnxruntime 1.28}
+      \end{itemize}
+    \end{statbox}
+  \end{column}
+
+  \begin{column}{0.50\textwidth}
+    \begin{statbox}{Rigorous Statistical Protocol}
+      \begin{itemize}\itemsep=0.5em
+        \item \textbf{Warmup}: 1,000 consecutive unmeasured runs
+        \item \textbf{Measurement}: 1,000 timed passes sequentially (never interleaved)
+        \item \textbf{Outlier Removal}: Filtered using 1.5 $\times$ IQR rule
+        \item \textbf{Confidence Intervals}: 10,000-resample bootstrap (95\% CI)
+        \item \textbf{Dual Test Sets (Speech Commands v2)}:
+          \begin{enumerate}\footnotesize
+            \item \textbf{10-Command Subset}: 4,074 official test clips
+            \item \textbf{Full 12-Class Task}: 12,005 clips (including 6,931 unknown + 1,000 background silence)
+          \end{enumerate}
+      \end{itemize}
+    \end{statbox}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 5: Accuracy Results
+% -----------------------------------------------------------------------------
+\begin{frame}{Accuracy Evaluation: 10-Command vs Full 12-Class Task}
+\begin{table}[h]
+\centering
+\small
+\begin{tabular}{lcccccc}
+\toprule
+& \multicolumn{3}{c}{\textbf{10-Command Subset (4,074 clips)}} & \multicolumn{3}{c}{\textbf{Full 12-Class Task (12,005 clips)}} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+\textbf{Model} & \textbf{fp32 (\%)} & \textbf{int8 (\%)} & \textbf{$\Delta$ (pts)} & \textbf{fp32 (\%)} & \textbf{int8 (\%)} & \textbf{$\Delta$ (pts)} \\
+\midrule
+\textbf{DS-CNN (ref.)} & 90.55 & 90.57 & \textbf{+0.02} & 95.49 & 95.21 & \textbf{$-$0.28} \\
+\textbf{DNN (anchor)}   & 79.63 & 79.65 & \textbf{+0.02} & 72.65 & 71.90 & \textbf{$-$0.75} \\
+\textbf{LSTM}          & 90.48 & 87.43 & \textbf{$-$3.05} & 88.84 & 84.72 & \textbf{$-$4.12} \\
+\textbf{CRNN}          & \textbf{92.56} & \textbf{92.17} & \textbf{$-$0.39} & \textbf{92.08} & \textbf{91.60} & \textbf{$-$0.48} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\vspace{0.4em}
+\begin{columns}[T]
+  \begin{column}{0.32\textwidth}
+    \begin{statbox}{1. Numerical Parity}
+      TFLite fp32 and ONNX fp32 produce \textbf{identical top-1 predictions} across all 12,005 clips (max absolute diff $<3\times 10^{-6}$).
+    \end{statbox}
+  \end{column}
+  \begin{column}{0.34\textwidth}
+    \begin{alertbox}{2. Recurrent PTQ Cost}
+      LSTM suffers the largest drop (\textbf{$-$3.05 pts} on subset, \textbf{$-$4.12 pts} on full task), proving recurrence is hardest to quantize without QAT.
+    \end{alertbox}
+  \end{column}
+  \begin{column}{0.32\textwidth}
+    \begin{keybox}{3. DS-CNN \& CRNN Robust}
+      Full-int8 quantization has negligible accuracy cost on DS-CNN ($-$0.28 pts) and CRNN ($-$0.48 pts) on the full task.
+    \end{keybox}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 6: Latency Results & Reversal
+% -----------------------------------------------------------------------------
+\begin{frame}{Latency Benchmark: The Architecture Reversal}
+\begin{columns}[T]
+  \begin{column}{0.50\textwidth}
+    \begin{table}[h]
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Model} & \textbf{TFLite fp32} & \textbf{TFLite int8} & \textbf{ONNX fp32} & \textbf{Ratio} \\
+    \midrule
+    \textbf{DS-CNN} & 0.2107 & \textbf{0.1268} & \textbf{0.1702} & \textbf{0.81} (ONNX) \\
+    \textbf{DNN}    & \textbf{0.0158} & \textbf{0.0067} & 0.0286 & \textbf{1.81} (TFLite) \\
+    \textbf{LSTM}   & \textbf{0.3722} & \textbf{0.1569} & 0.7782 & \textbf{2.09} (TFLite) \\
+    \textbf{CRNN}   & \textbf{0.2586} & \textbf{0.1016} & 0.3609 & \textbf{1.40} (TFLite) \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+
+    \vspace{0.1em}
+    \begin{statbox}{Key Architectural Insight}
+      \begin{itemize}\scriptsize\itemsep=0.3em
+        \item \textbf{Why ONNX wins on DS-CNN}: DS-CNN is operator-dispatch bound (stride-2 conv, 4 depthwise blocks). ONNX's aggressive \textbf{kernel fusion} cuts operator dispatch overhead.
+        \item \textbf{Why TFLite wins on the rest}: DNN, LSTM, and CRNN are dominated by large GEMM and sequential dataflow. TFLite's lightweight session machinery wins by \textbf{1.40--2.09$\times$}.
+      \end{itemize}
+    \end{statbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/latency_multi.pdf}
+    \vspace{-0.6em}
+    \begin{keybox}{Full INT8 Acceleration}
+      \scriptsize Full-int8 DS-CNN runs in \textbf{0.1268\,ms} (25\% faster than ONNX fp32 and original mixed-precision artifact).
+    \end{keybox}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 7: Thread Sensitivity Sweep
+% -----------------------------------------------------------------------------
+\begin{frame}{Thread-Sensitivity Sweep (T = 1, 2, 4 Cores)}
+\begin{columns}[T]
+  \begin{column}{0.49\textwidth}
+    \begin{table}[h]
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{4pt}
+    \begin{tabular}{lccc}
+    \toprule
+    \textbf{Model \& Runtime} & \textbf{T=1} & \textbf{T=2} & \textbf{T=4} \\
+    \midrule
+    \textbf{DS-CNN TFLite} & 0.2119 & 0.1229 & \textbf{0.0782} \\
+    \textbf{DS-CNN ONNX}   & 0.4379 & 0.2594 & 0.1689 \\
+    \textit{Ratio (ONNX / TFLite)} & \textbf{2.07$\times$} & \textbf{2.11$\times$} & \textbf{2.16$\times$} \\
+    \midrule
+    \textbf{CRNN TFLite}   & 0.2598 & \textbf{0.1873} & 0.2195 \\
+    \textbf{CRNN ONNX}     & 0.5075 & 0.4186 & 0.3610 \\
+    \textit{Ratio (ONNX / TFLite)} & \textbf{1.95$\times$} & \textbf{2.24$\times$} & \textbf{1.64$\times$} \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+
+    \vspace{0.2em}
+    \begin{statbox}{Discovery: The Default Threading Confound}
+      In default configurations, ONNX silently spawned a \textbf{4-thread threadpool}, while TFLite defaulted to \textbf{1 thread}!
+    \end{statbox}
+  \end{column}
+
+  \begin{column}{0.49\textwidth}
+    \begin{alertbox}{Controlled Iso-Thread Findings}
+      \begin{itemize}\itemsep=0.3em
+        \item \textbf{TFLite Wins at Every Thread Count}: When both runtimes are explicitly pinned to $T=1$, TFLite is actually \textbf{2.07$\times$ faster} than ONNX on DS-CNN (0.2119 vs 0.4379\,ms).
+        \item \textbf{Scaling Diminishing Returns}: CRNN under TFLite is slower at 4 threads (0.2195\,ms) than at 2 threads (0.1873\,ms) due to thread synchronization overhead on small models ($<60$k params).
+        \item \textbf{Stable Ranking}: The runtime ranking is fully preserved across core sweeps.
+      \end{itemize}
+    \end{alertbox}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 8: On-Board PMIC Energy Measurement
+% -----------------------------------------------------------------------------
+\begin{frame}{On-Board SoC Energy Profiling via PMIC ADC}
+\begin{columns}[T]
+  \begin{column}{0.50\textwidth}
+    \begin{table}[h]
+    \centering
+    \scriptsize
+    \setlength{\tabcolsep}{3pt}
+    \begin{tabular}{lcccc}
+    \toprule
+    \textbf{Model} & \textbf{Runtime} & \textbf{$P_\Delta$ (W)} & \textbf{$t_\text{lat}$ (ms)} & \textbf{Energy $E$ (mJ)} \\
+    \midrule
+    \textbf{DS-CNN} & \textbf{TFLite fp32} & 1.59 & 0.217 & \textbf{0.34 mJ} \\
+    \textbf{DS-CNN} & ONNX fp32   & 1.18 & 0.448 & 0.53 mJ \\
+    \midrule
+    \textbf{CRNN}   & \textbf{TFLite fp32} & 1.85 & 0.274 & \textbf{0.51 mJ} \\
+    \textbf{CRNN}   & ONNX fp32   & 1.58 & 0.494 & 0.78 mJ \\
+    \midrule
+    \textbf{LSTM}   & \textbf{TFLite fp32} & 1.81 & 0.406 & \textbf{0.74 mJ} \\
+    \textbf{LSTM}   & ONNX fp32   & 1.31 & 0.725 & 0.95 mJ \\
+    \bottomrule
+    \end{tabular}
+    \end{table}
+
+    \vspace{0.1em}
+    \begin{statbox}{Direct PMIC ADC Telemetry}
+      Captured via \texttt{vcgencmd pmic\_read\_adc} across 12 voltage rails. Measures pure SoC power, excluding peripherals.
+    \end{statbox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \begin{keybox}{The Power vs Energy Paradox}
+      \begin{itemize}\itemsep=0.3em
+        \item \textbf{Power Draw}: TFLite draws \textbf{more instantaneous power} ($+35\%$ on DS-CNN: 1.59\,W vs 1.18\,W).
+        \item \textbf{Total Energy}: Because TFLite executes more than $2\times$ faster, it consumes \textbf{35\% less energy} per inference (0.34\,mJ vs 0.53\,mJ)!
+        \item \textbf{Takeaway}: For periodic and always-on edge audio, \textbf{faster completion to idle (Race-to-Sleep)} beats lower instantaneous power draw.
+      \end{itemize}
+    \end{keybox}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 9: Accuracy vs Parameters Frontier
+% -----------------------------------------------------------------------------
+\begin{frame}{Accuracy vs Model Size Pareto Frontier}
+\begin{columns}[T]
+  \begin{column}{0.54\textwidth}
+    \centering
+    \includegraphics[width=\linewidth]{figures/acc_params.pdf}
+  \end{column}
+
+  \begin{column}{0.44\textwidth}
+    \begin{statbox}{Architecture Trade-offs}
+      \small
+      \begin{itemize}\itemsep=0.15em
+        \item \textbf{CRNN (Best Accuracy)}: Reaches the highest accuracy (\textbf{92.56\%} on 10-cmd, \textbf{92.08\%} on full task) at 56.8k parameters.
+        \item \textbf{LSTM (Parameter-Efficient)}: Reaches 90.48\% with only \textbf{19,980 parameters}, but harder to quantize.
+        \item \textbf{DS-CNN (Sweet Spot)}: Exceptional balance: 22.6k params, 95.49\% full-task accuracy, lowest latency (0.1268\,ms in int8).
+        \item \textbf{DNN (Anchor)}: Spends 88.4k params for lowest accuracy (72.65\% on 12-class).
+      \end{itemize}
+    \end{statbox}
+  \end{column}
+\end{columns}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 10: Conclusion & Practical Guidelines
+% -----------------------------------------------------------------------------
+\begin{frame}{Conclusion: Guidelines for Edge AI Practitioners}
+\begin{statbox}{Core Findings}
+  \begin{enumerate}\itemsep=0.3em
+    \item \textbf{Runtime Gap Does Not Generalize}: Defaulting to ONNX Runtime only pays off for convolution-heavy graphs like DS-CNN under multi-threading. For dense, recurrent, and hybrid models, \textbf{TensorFlow Lite is 1.40--2.09$\times$ faster}.
+    \item \textbf{Iso-Thread Parity Favors TFLite}: When pinned to equal thread counts ($T=1, 2, 4$), TensorFlow Lite is faster for all architectures.
+    \item \textbf{Quantization vs Runtime Exchange Rate}: Full-int8 quantization provides a 1.7--2.5$\times$ speedup at negligible accuracy cost, except on recurrent units (LSTM).
+    \item \textbf{Race-to-Sleep Energy Advantage}: Lower inference latency directly translates to 35\% lower battery energy consumption.
+  \end{enumerate}
+\end{statbox}
+
+\vspace{0.2em}
+\begin{keybox}{Actionable Recommendation}
+  \textbf{Choose your edge runtime based on architectural operator distribution, not convention.} Test both TFLite and ONNX with pinned threads before production deployment.
+\end{keybox}
+\end{frame}
+
+% -----------------------------------------------------------------------------
+% SLIDE 11: Open Science & Q&A
+% -----------------------------------------------------------------------------
+\begin{frame}{Open Science, Reproducibility \& Thank You}
+\centering
+\vspace{0.4em}
+\LARGE \textbf{Thank You for Your Attention!}\\[1.0ex]
+\large \textit{Questions \& Comments Welcome}\\[2.0ex]
+
+\normalsize
+\begin{columns}[T]
+  \begin{column}{0.50\textwidth}
+    \begin{keybox}{Open Science \& Permanent Artifact}
+      \begin{itemize}\itemsep=0.4em
+        \item \textbf{Zenodo DOI}:\\
+          \texttt{\footnotesize\href{https://doi.org/10.5281/zenodo.23765521}{10.5281/zenodo.23765521}}
+        \item \textbf{GitHub Repository}:\\
+          \texttt{\footnotesize\href{https://github.com/jaweed3/kws-pi5-benchmark}{github.com/jaweed3/kws-pi5-benchmark}}
+        \item \textbf{Open License}: GNU AGPLv3
+      \end{itemize}
+    \end{keybox}
+  \end{column}
+
+  \begin{column}{0.48\textwidth}
+    \begin{statbox}{Contact Authors}
+      \begin{itemize}\itemsep=0.3em
+        \item \textbf{Fatih Jawwad Al Mumtaz}\\
+          \texttt{\scriptsize fatihalmumtaz76@student.cs.unida.gontor.ac.id}
+        \item \textbf{Amirul Al Aziz}\\
+          \texttt{\scriptsize amirulalaziz57@student.tip.unida.gontor.ac.id}
+        \item \footnotesize Faculty of Science and Technology,\\Universitas Darussalam Gontor, Indonesia
+      \end{itemize}
+    \end{statbox}
+  \end{column}
+\end{columns}
+\end{frame}
+
+\end{document}
