@@ -18,3 +18,4 @@ bench/data/
 # Interim conversion artifacts (final: ICAITech2026_review.doc)
 main_review.doc
 main_review.docx
+*.zip

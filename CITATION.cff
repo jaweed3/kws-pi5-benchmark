@@ -1,0 +1,23 @@
+cff-version: 1.2.0
+message: "If you use this benchmark or codebase, please cite the paper below."
+title: "Benchmarking Keyword Spotting Architectures across TensorFlow Lite and ONNX Runtime on a Raspberry Pi 5"
+authors:
+  - family-names: "Al Mumtaz"
+    given-names: "Fatih Jawwad"
+    email: "fatihalmumtaz76@student.cs.unida.gontor.ac.id"
+    affiliation: "Department of Informatics, Universitas Darussalam Gontor, Ponorogo, Indonesia"
+  - family-names: "Al Aziz"
+    given-names: "Amirul"
+    email: "amirulalaziz57@student.tip.unida.gontor.ac.id"
+    affiliation: "Department of Agricultural Industrial Technology, Universitas Darussalam Gontor, Ponorogo, Indonesia"
+preferred-citation:
+  type: conference-paper
+  title: "Benchmarking Keyword Spotting Architectures across TensorFlow Lite and ONNX Runtime on a Raspberry Pi 5"
+  authors:
+    - family-names: "Al Mumtaz"
+      given-names: "Fatih Jawwad"
+    - family-names: "Al Aziz"
+      given-names: "Amirul"
+  conference:
+    name: "2026 8th International Conference on Artificial Intelligence and Information Technology (ICAITech)"
+  year: 2026

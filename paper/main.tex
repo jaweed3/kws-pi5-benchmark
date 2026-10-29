@@ -10,6 +10,17 @@
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
 \usepackage{xcolor}
+\usepackage{balance}
+
+\setlength{\textfloatsep}{6pt plus 1pt minus 1pt}
+\setlength{\floatsep}{5pt plus 1pt minus 1pt}
+\setlength{\intextsep}{5pt plus 1pt minus 1pt}
+\setlength{\abovecaptionskip}{3pt}
+\setlength{\belowcaptionskip}{2pt}
+
+\renewcommand{\topfraction}{0.95}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.85}
 
 \newcommand{\tflite}{TensorFlow Lite}
 \newcommand{\ort}{ONNX Runtime}
@@ -18,14 +29,18 @@
 
 \title{Benchmarking Keyword Spotting Architectures across TensorFlow Lite and ONNX Runtime on a Raspberry Pi 5}
 
-% Double-blind: author block left empty for ICAITech review.
-% Restore this block for camera-ready:
-% \author{\IEEEauthorblockN{Fatih Jawwad Al Mumtaz}
-% \IEEEauthorblockA{\textit{Informatics Engineering, Faculty of Science and Technology}\\
-% Universitas Darussalam Gontor\\
-% Ponorogo, Indonesia\\
-% \textit{fatihalmumtaz76@student.cs.unida.gontor.ac.id}}}
-\author{}
+% Author block restored for camera-ready:
+\author{
+\IEEEauthorblockN{Fatih Jawwad Al Mumtaz}
+\IEEEauthorblockA{\textit{Department of Informatics}\\
+Universitas Darussalam Gontor, Indonesia\\
+fatihalmumtaz76@student.cs.unida.gontor.ac.id}
+\and
+\IEEEauthorblockN{Amirul Al Aziz}
+\IEEEauthorblockA{\textit{Dept. of Agricultural Industrial Technology}\\
+Universitas Darussalam Gontor, Indonesia\\
+amirulalaziz57@student.tip.unida.gontor.ac.id}
+}
 
 \maketitle
 
@@ -118,53 +133,27 @@ This method captures SoC-level power consumption only---it excludes USB peripher
 
 \subsection{Accuracy}
 
-Table~\ref{tab:acc} and Figure~\ref{fig:acc} summarize top-1 accuracy over the 4{,}074-clip subset for all four models in both float32 runtimes plus the quantized TensorFlow Lite variants. Three observations stand out. First, the float32 runtimes are numerically interchangeable: for every model the maximum absolute output difference between TensorFlow Lite and ONNX Runtime is below $3\times10^{-6}$, and the accuracies agree to the clip. Second, the architecture ordering is consistent with the literature---the recurrent and hybrid models (LSTM 90.48\%, CRNN 92.56\%) outperform the dense baseline (79.63\%) and at least match the reference DS-CNN (90.55\%) on this ten-command subset. Third, quantization costs accuracy unevenly: the dense model is essentially unaffected (79.63\% $\rightarrow$ 79.65\%), the CRNN loses 0.39 points (92.56\% $\rightarrow$ 92.17\%), and the LSTM loses the most, 3.05 points (90.48\% $\rightarrow$ 87.43\%), consistent with recurrent units being the hardest to quantize. For the DS-CNN, the int8 column reports the new full-int8 quantization (90.57\%, $+0.02$~pts versus rebuilt float32); the original mixed-precision artifact scores 90.45\% on the same subset.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/accuracy.pdf}
-\caption{Top-1 accuracy by model, float32 versus int8-quantized TensorFlow Lite. The LSTM is the only architecture for which quantization costs more than half a point on the ten-command subset. For DS-CNN the int8 bar is the new full-int8 quantization (Table~\ref{tab:acc12} reports the full 12-class task).}
-\label{fig:acc}
-\end{figure}
+Table~\ref{tab:acc} summarizes top-1 accuracy across both the 4{,}074-clip ten-command subset and the full 12-class task (12{,}005 clips) for all four models in both float32 runtimes plus the full-int8 TensorFlow Lite variants. Three observations stand out. First, the float32 runtimes are numerically interchangeable: for every model the maximum absolute output difference between TensorFlow Lite and ONNX Runtime is below $3\times10^{-6}$, and the accuracies agree to the clip. Second, the architecture ordering is consistent with the literature---the recurrent and hybrid models (LSTM 90.48\%, CRNN 92.56\%) outperform the dense baseline (79.63\%) and at least match the reference DS-CNN (90.55\%) on this ten-command subset. Third, quantization costs accuracy unevenly: the dense model is essentially unaffected (79.63\% $\rightarrow$ 79.65\%), the CRNN loses 0.39 points (92.56\% $\rightarrow$ 92.17\%), and the LSTM loses the most, 3.05 points (90.48\% $\rightarrow$ 87.43\%), consistent with recurrent units being the hardest to quantize. For the DS-CNN, the int8 column reports the new full-int8 quantization (90.57\%, $+0.02$~pts versus rebuilt float32); the original mixed-precision artifact scores 90.45\% on the same subset.
 
 \begin{table}[t]
-\caption{Top-1 accuracy over 4{,}074 Speech Commands v2 test clips (ten command classes). The fp32 column reports the rebuilt true-float32 artifact (Section~III-C) in both runtimes; the original mixed-precision artifact scores 90.45\% on the same subset, confirming the reconstruction preserves accuracy. The int8 column is full-int8 post-training quantization for all four models (DS-CNN: calibrated on 1{,}000 training clips, seed~42, float I/O with int8 internals).}
+\caption{Top-1 accuracy on Speech Commands v2 across the 10-command subset (4{,}074 clips) and the full 12-class task (12{,}005 clips: 4{,}074 commands, 6{,}931 unknown, 1{,}000 silence; protocol in Section~III-D). The fp32 column reports the rebuilt true-float32 DS-CNN and the trained fp32 models in both runtimes; the int8 column is full-int8 TensorFlow Lite (DS-CNN calibrated on 1{,}000 training clips, seed~42). The original mixed-precision DS-CNN artifact scores 90.45\% on the subset and 95.29\% on the full task (95.48\% with float I/O).}
 \label{tab:acc}
 \centering
 {\footnotesize
 \setlength{\tabcolsep}{3pt}
 \resizebox{\columnwidth}{!}{%
-\begin{tabular}{lccc}
+\begin{tabular}{lcccccc}
 \toprule
-Model & fp32 TFLite/ONNX (\%) & int8 TFLite (\%) & $\Delta$ int8 (pts) \\
+& \multicolumn{3}{c}{10-Command Subset} & \multicolumn{3}{c}{Full 12-Class Task} \\
+\cmidrule(lr){2-4} \cmidrule(lr){5-7}
+Model & fp32 (\%) & int8 (\%) & $\Delta$ (pts) & fp32 (\%) & int8 (\%) & $\Delta$ (pts) \\
 \midrule
-DS-CNN (reference) & 90.55 & 90.57 & $+0.02$ \\
-DNN & 79.63 & 79.65 & $+0.02$ \\
-LSTM & 90.48 & 87.43 & $-3.05$ \\
-CRNN & 92.56 & 92.17 & $-0.39$ \\
+DS-CNN (ref.) & 90.55 & 90.57 & $+0.02$ & 95.49 & 95.21 & $-0.28$ \\
+DNN            & 79.63 & 79.65 & $+0.02$ & 72.65 & 71.90 & $-0.75$ \\
+LSTM           & 90.48 & 87.43 & $-3.05$ & 88.84 & 84.72 & $-4.12$ \\
+CRNN           & 92.56 & 92.17 & $-0.39$ & 92.08 & 91.60 & $-0.48$ \\
 \bottomrule
-\end{tabular}
-}
-}
-\end{table}
-
-\begin{table}[t]
-\caption{Top-1 accuracy on the full 12-class Speech Commands v2 test task (12{,}005 clips: 4{,}074 commands, 6{,}931 unknown, 1{,}000 silence; protocol in Section~III-D). The fp32 column reports the rebuilt true-float32 DS-CNN and the trained fp32 models in both runtimes; the int8 column is full-int8 TensorFlow Lite. The original mixed-precision DS-CNN artifact scores 95.29\% (int8 I/O, evaluated with input quantization and output dequantization) and the unrebuilt mixed-precision file scores 95.48\% with float I/O.}
-\label{tab:acc12}
-\centering
-{\footnotesize
-\setlength{\tabcolsep}{3pt}
-\resizebox{\columnwidth}{!}{%
-\begin{tabular}{lccc}
-\toprule
-Model & fp32 TFLite/ONNX (\%) & int8 TFLite (\%) & $\Delta$ int8 (pts) \\
-\midrule
-DS-CNN (reference) & 95.49 & 95.21 & $-0.28$ \\
-DNN & 72.65 & 71.90 & $-0.75$ \\
-LSTM & 88.84 & 84.72 & $-4.12$ \\
-CRNN & 92.08 & 91.60 & $-0.48$ \\
-\bottomrule
-\end{tabular}
+\end{tabular}%
 }
 }
 \end{table}
@@ -173,7 +162,7 @@ On the full task, the architecture ordering is preserved but the levels shift: t
 
 \subsection{Latency}
 
-Table~\ref{tab:lat} and Figure~\ref{fig:lat} report inference latency for the full model $\times$ runtime grid. The comparison reverses the single-model expectation: ONNX Runtime is faster than float32 TensorFlow Lite only for the DS-CNN (0.170~ms versus 0.211~ms, a 19.2\% reduction), while TensorFlow Lite is faster for every other architecture---1.81$\times$ for the dense network, 2.09$\times$ for the LSTM, and 1.40$\times$ for the CRNN. The recurrent models are the slowest in absolute terms regardless of runtime: their sequential dependence dominates. Full-int8 quantization accelerates every model: the dense network (0.0158~ms $\rightarrow$ 0.0067~ms, 2.3$\times$), the CRNN (0.2586~ms $\rightarrow$ 0.1016~ms, 2.5$\times$), the LSTM (0.3722~ms $\rightarrow$ 0.1569~ms, 2.4$\times$), and the DS-CNN (0.2107~ms $\rightarrow$ 0.1268~ms, 1.7$\times$), bringing the LSTM to the only configuration in which the recurrent model becomes competitive with the convolutional ones. For reference, the original mixed-precision DS-CNN artifact runs in 0.170~ms, nearly identical to the ONNX fp32 time---the full-int8 model is 25\% faster than both.
+Table~\ref{tab:lat} reports inference latency for the full model $\times$ runtime grid. The comparison reverses the single-model expectation: ONNX Runtime is faster than float32 TensorFlow Lite only for the DS-CNN (0.170~ms versus 0.211~ms, a 19.2\% reduction), while TensorFlow Lite is faster for every other architecture---1.81$\times$ for the dense network, 2.09$\times$ for the LSTM, and 1.40$\times$ for the CRNN. The recurrent models are the slowest in absolute terms regardless of runtime: their sequential dependence dominates. Full-int8 quantization accelerates every model: the dense network (0.0158~ms $\rightarrow$ 0.0067~ms, 2.3$\times$), the CRNN (0.2586~ms $\rightarrow$ 0.1016~ms, 2.5$\times$), the LSTM (0.3722~ms $\rightarrow$ 0.1569~ms, 2.4$\times$), and the DS-CNN (0.2107~ms $\rightarrow$ 0.1268~ms, 1.7$\times$), bringing the LSTM to the only configuration in which the recurrent model becomes competitive with the convolutional ones. For reference, the original mixed-precision DS-CNN artifact runs in 0.170~ms, nearly identical to the ONNX fp32 time---the full-int8 model is 25\% faster than both.
 
 \begin{table}[t]
 \caption{Inference latency on the Raspberry Pi 5 under the performance governor (protocol details in Section~III-D). All times in milliseconds; the last column is the ONNX Runtime / float32 TensorFlow Lite ratio (values below 1 favor ONNX Runtime, above 1 favor TensorFlow Lite). The DS-CNN ``TFLite int8'' cell is the new full-int8 quantization (Section~III-B); the original mixed-precision artifact runs in 0.170~ms.}
@@ -218,12 +207,7 @@ Ratio & 1.95 & 2.24 & 1.64 \\
 
 Two notes on the sweep. First, the explicitly pinned 1-thread ONNX numbers (0.44~ms DS-CNN, 0.51~ms CRNN) are substantially slower than the default-configuration ONNX numbers in Table~\ref{tab:lat} (0.17~ms, 0.36~ms), because the default ONNX thread pool already parallelizes across the Pi's four cores---pinning to one thread removes that parallelism. TensorFlow Lite, which defaults to a single thread, reproduces its Table~\ref{tab:lat} figure under explicit T=1 pinning (0.2119 versus 0.2107~ms). The main-grid comparison is therefore between single-threaded TensorFlow Lite and multi-threaded ONNX Runtime; the sweep shows the TensorFlow Lite advantage holds even when both runtimes are pinned equally. Second, the CRNN under TensorFlow Lite is slower at four threads (0.2195~ms) than at two (0.1873~ms): for a 56.8k-parameter model, thread-management overhead outweighs the parallel gain beyond two threads.
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{figures/latency_multi.pdf}
-\caption{Mean inference latency by model and runtime. ONNX Runtime is faster than float32 TensorFlow Lite only for the DS-CNN; TensorFlow Lite wins for the dense, LSTM, and CRNN models.}
-\label{fig:lat}
-\end{figure}
+
 
 \subsection{Energy}
 \label{sec:energy}
@@ -261,7 +245,7 @@ Figure~\ref{fig:accparams} places the accuracy results in the model-size dimensi
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{figures/acc_params.pdf}
+\includegraphics[width=0.62\columnwidth]{figures/acc_params.pdf}
 \caption{Top-1 accuracy versus parameter count (float32). The CRNN reaches the highest accuracy with 56.8k parameters, while the dense network spends the most parameters for the lowest accuracy.}
 \label{fig:accparams}
 \end{figure}
@@ -270,8 +254,9 @@ The single-model finding of an earlier benchmark---ONNX Runtime beating float32 
 
 Quantization tells a complementary story. Full-int8 TensorFlow Lite accelerates all four models---the dense network (2.3$\times$), the CRNN (2.5$\times$), the LSTM (2.4$\times$), and the DS-CNN (1.7$\times$, 0.2107~ms $\rightarrow$ 0.1268~ms)---with accuracy losses below half a point on the ten-command subset except for the LSTM. The full-int8 DS-CNN loses only 0.28 points on the full 12-class task (95.49\% $\rightarrow$ 95.21\%) and is effectively free on the subset ($+0.02$~pts); at 0.1268~ms it is 25\% faster than both the original mixed-precision artifact and the ONNX fp32 path. The LSTM is the exception: quantization costs 3.05 accuracy points on the subset (4.12 on the full task) and still leaves it slower than the CRNN, consistent with recurrent units being the hardest to quantize. The practical implication is that runtime and quantization are substitutes with an architecture-dependent exchange rate: for the DS-CNN, switching to ONNX Runtime buys the same speedup as quantization at no accuracy cost; for the recurrent models, neither lever is free.
 
-Several factors bound the generalizability of these results. All measurements come from a single Raspberry Pi 5 board: a replication attempt on a second board (Jetson Nano B01) was blocked by a boot failure---the available image would not boot past the logo screen without a 5V/4A power supply and a J48 power-select jumper that were not on hand---so cross-board replication remains future work. The latency grid uses no hardware delegates, and quantized ONNX execution is not covered. The thread-sensitivity sweep (Table~\ref{tab:threads}) covers two of the four architectures; extending it to the dense and LSTM models is straightforward following the same protocol. Extension to other model families (transformer-based KWS), other runtimes (quantized ONNX, TFLite delegates), and other SBCs is left for future work. The training, export, and benchmark code is straightforward to rerun and is the basis for the reported numbers; all code, model artifacts, and raw results are publicly available at \url{https://anonymous.4open.science/r/kws-pi5-artifact-13FC/README.md}.
+Several factors bound the generalizability of these results. All measurements come from a single Raspberry Pi 5 board: a replication attempt on a second board (Jetson Nano B01) was blocked by a boot failure---the available image would not boot past the logo screen without a 5V/4A power supply and a J48 power-select jumper that were not on hand---so cross-board replication and hardware delegates remain future work. The thread-sensitivity sweep (Table~\ref{tab:threads}) covers two of the four architectures; extending it to the dense and LSTM models, as well as transformer-based KWS, is straightforward following the same protocol. The training, export, and benchmark code is straightforward to rerun and is the basis for the reported numbers; all code, model artifacts, and raw results are publicly available at \url{https://anonymous.4open.science/r/kws-pi5-artifact-13FC/README.md}.
 
+\balance
 \section{Conclusion}
 
 We benchmarked four keyword-spotting architectures---DS-CNN, DNN, LSTM, and CRNN---across TensorFlow Lite (float32 and full-int8) and ONNX Runtime (float32) on a Raspberry Pi 5, under a controlled protocol with verified preprocessing, a faithful float32 reconstruction of the mixed-precision reference artifact, a new full-int8 DS-CNN quantization, and on-board power measurement via the PMIC. At top-1 accuracies of 79.6--92.6\% over 4{,}074 Speech Commands v2 test clips (72.7--95.5\% on the full 12-class, 12{,}005-clip task), the float32 runtimes were numerically interchangeable, but their speed differed by architecture: ONNX Runtime was faster only for the convolution-heavy DS-CNN (19.2\%), while TensorFlow Lite was 1.40--2.09$\times$ faster for the dense, LSTM, and CRNN models, and full-int8 quantization accelerated all four models (1.7--2.5$\times$) at an accuracy cost that ranged from negligible to 3.05 points for the LSTM on the subset (4.12 on the full task). The full-int8 DS-CNN runs in 0.1268~ms at 95.21\% full-task accuracy, 25\% faster than both the mixed-precision artifact and the ONNX fp32 path. A thread-sensitivity sweep confirmed the ranking is stable at 1, 2, and 4 threads for the DS-CNN and the CRNN. Energy measurements confirmed that TensorFlow Lite's latency advantage translates into an energy advantage: the DS-CNN under TensorFlow Lite consumed 0.34~mJ per inference, 35\% less than ONNX Runtime's 0.53~mJ, despite drawing more instantaneous power. The choice of inference runtime is therefore an architecture-aware decision on Arm single-board computers: a benchmark against the default model alone is not a safe basis for generalizing about runtimes, and the fastest configuration for one model family may be the slowest for another.
