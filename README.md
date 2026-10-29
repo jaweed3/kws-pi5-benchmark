@@ -1,6 +1,6 @@
 # Benchmarking Keyword Spotting Architectures across TensorFlow Lite and ONNX Runtime on a Raspberry Pi 5
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 <!-- Zenodo badge placeholder: [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.xxxxxxx.svg)](https://doi.org/10.5281/zenodo.xxxxxxx) -->
 
 Official artifact repository for the paper:
@@ -58,7 +58,7 @@ kws-pi5-benchmark/
 │   └── results/            # Raw measurement JSONs and evaluation logs
 ├── literature/             # Related literature references and download script
 ├── CITATION.cff            # Citation metadata
-└── LICENSE                 # MIT License
+└── LICENSE                 # GNU Affero General Public License v3.0 (AGPLv3)
 ```
 
 ---

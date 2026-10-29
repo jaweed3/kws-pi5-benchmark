@@ -1,6 +1,7 @@
 cff-version: 1.2.0
 message: "If you use this benchmark or codebase, please cite the paper below."
 title: "Benchmarking Keyword Spotting Architectures across TensorFlow Lite and ONNX Runtime on a Raspberry Pi 5"
+license: AGPL-3.0-or-later
 authors:
   - family-names: "Al Mumtaz"
     given-names: "Fatih Jawwad"
