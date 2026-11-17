@@ -1,0 +1,331 @@
+\documentclass[11pt,a4paper]{article}
+
+\usepackage[margin=2.0cm]{geometry}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,breakable}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{hyperref}
+
+% --- Color Palette ---
+\definecolor{NavyBlue}{RGB}{0, 45, 77}
+\definecolor{SoftSlate}{RGB}{70, 90, 110}
+\definecolor{TierGreenBg}{RGB}{235, 247, 240}
+\definecolor{TierGreenBorder}{RGB}{46, 125, 50}
+\definecolor{TierOrangeBg}{RGB}{255, 248, 235}
+\definecolor{TierOrangeBorder}{RGB}{230, 126, 34}
+\definecolor{TierRedBg}{RGB}{253, 242, 242}
+\definecolor{TierRedBorder}{RGB}{192, 57, 43}
+\definecolor{TipBg}{RGB}{240, 244, 250}
+\definecolor{TipBorder}{RGB}{41, 128, 185}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=NavyBlue,
+  urlcolor=NavyBlue,
+  citecolor=NavyBlue
+}
+
+% --- Custom Question Boxes ---
+\newtcolorbox{easybox}[2][]{
+  colback=TierGreenBg, colframe=TierGreenBorder,
+  fonttitle=\bfseries\small, title={#2},
+  arc=1.5mm, boxrule=0.8pt, left=6pt, right=6pt, top=4pt, bottom=4pt,
+  #1
+}
+
+\newtcolorbox{mediumbox}[2][]{
+  colback=TierOrangeBg, colframe=TierOrangeBorder,
+  fonttitle=\bfseries\small, title={#2},
+  arc=1.5mm, boxrule=0.8pt, left=6pt, right=6pt, top=4pt, bottom=4pt,
+  #1
+}
+
+\newtcolorbox{hardbox}[2][]{
+  colback=TierRedBg, colframe=TierRedBorder,
+  fonttitle=\bfseries\small, title={#2},
+  arc=1.5mm, boxrule=0.8pt, left=6pt, right=6pt, top=4pt, bottom=4pt,
+  #1
+}
+
+\newtcolorbox{tipbox}[2][]{
+  colback=TipBg, colframe=TipBorder,
+  fonttitle=\bfseries\small, title={#2},
+  arc=1.5mm, boxrule=0.8pt, left=6pt, right=6pt, top=5pt, bottom=5pt,
+  breakable, #1
+}
+
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+% --- Header Title ---
+\begin{center}
+  {\LARGE\textbf{\textcolor{NavyBlue}{Panduan Komprehensif Tanya-Jawab (Q\&A Guide)}}}\\[0.4ex]
+  {\large\textbf{Presentasi Konferensi IEEE ICAITech 2026}}\\[0.8ex]
+  {\footnotesize\textbf{Paper:} \textit{Benchmarking Keyword Spotting Architectures across TensorFlow Lite and ONNX Runtime on a Raspberry Pi 5}}\\
+  {\footnotesize\textbf{Authors:} Fatih Jawwad Al Mumtaz \& Amirul Al Aziz (Universitas Darussalam Gontor)}\\
+  {\scriptsize Zenodo DOI: \href{https://doi.org/10.5281/zenodo.23765521}{10.5281/zenodo.23765521} \quad | \quad GitHub: \href{https://github.com/jaweed3/kws-pi5-benchmark}{jaweed3/kws-pi5-benchmark} \quad | \quad License: GNU AGPLv3}
+\end{center}
+\vspace{-0.5em}
+\hrule height 1pt
+\vspace{1.0em}
+
+\begin{tipbox}{Petunjuk Praktis Penggunaan Panduan Ini}
+Dokumen ini disusun berjenjang mulai dari \textbf{Tier 1 (Pertanyaan Remeh / Santai)} yang paling sering diajukan session chair untuk menghidupkan suasana, \textbf{Tier 2 (Pertanyaan Sedang / Metodologis)} yang menguji desain eksperimen, hingga \textbf{Tier 3 (Pertanyaan Kritis / Jebakan Teknis)} dari reviewer ahli. Setiap nomor dilengkapi:
+\begin{itemize}[noitemsep,topsep=1pt]
+  \item \textbf{Konteks \& Jawaban Kilat (Bahasa Indonesia)}: Logika utama agar paham esensi jawabannya dalam hitungan detik.
+  \item \textbf{Spoken Response Script (English)}: Kalimat formal siap ucap yang lugas, sopan, dan percaya diri.
+\end{itemize}
+\end{tipbox}
+
+% =============================================================================
+\section*{\textcolor{TierGreenBorder}{\Large Tier 1: Pertanyaan Remeh / Pemanasan (Easy / Warm-Up)}}
+% =============================================================================
+Pertanyaan di tier ini biasanya dilontarkan oleh Session Chair yang ramah atau audiens umum yang ingin memastikan mereka mengikuti topik dasar presentasi.
+
+% Q1
+\begin{easybox}{Q1: What is Keyword Spotting (KWS), and what is its everyday application?}
+\textbf{Konteks (ID):} Keyword Spotting adalah teknologi deteksi kata pemicu (wake-word) yang aktif terus-menerus (always-on). Contohnya: "Hey Google", "Hey Siri", atau perintah hands-free alat medis.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"Keyword Spotting, or KWS, is a specialized lightweight audio classification task designed to listen continuously for a small set of predefined trigger words---similar to 'Hey Google' or 'Alexa'. Because it runs continuously, its primary constraints are ultra-low latency and strictly bounded energy consumption."}
+\end{quote}
+\end{easybox}
+
+% Q2
+\begin{easybox}{Q2: What dataset did you use for training and benchmarking?}
+\textbf{Konteks (ID):} Google Speech Commands Dataset v2 (Warden, 2018), standar emas di dunia riset KWS dan benchmark resmi MLPerf Tiny.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"We benchmarked using Google Speech Commands Dataset Version 2, which is the canonical gold-standard benchmark in TinyML literature and the MLPerf Tiny reference suite. It contains over 105,000 one-second audio utterances spoken by diverse speakers."}
+\end{quote}
+\end{easybox}
+
+% Q3
+\begin{easybox}{Q3: Why 12 classes? I thought Speech Commands only targets 10 commands?}
+\textbf{Konteks (ID):} 10 kata target (Yes, No, Up, Down, Left, Right, On, Off, Stop, Go) + 1 Silence (keheningan/background noise) + 1 Unknown (kata selain target agar tidak salah pemicu di dunia nyata).\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"In real-world deployment, an edge device must reject background ambient noise and irrelevant words. Therefore, standard KWS models classify 12 outputs: 10 target keywords, 1 background silence class, and 1 'unknown' class capturing all other vocabulary."}
+\end{quote}
+\end{easybox}
+
+% Q4
+\begin{easybox}{Q4: Which model in your benchmark achieved the highest accuracy?}
+\textbf{Konteks (ID):} CRNN (Convolutional Recurrent Neural Network) meraih akurasi tertinggi: 92.56\% pada 10-command subset, dan 92.08\% pada full 12-class task.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"The hybrid CRNN architecture achieved the highest accuracy across both benchmarks: 92.56\% on the 10-command subset and 92.08\% on the full 12-class task, leveraging 2D convolutions for spectral extraction and GRU for temporal modeling."}
+\end{quote}
+\end{easybox}
+
+% Q5
+\begin{easybox}{Q5: Which model was the fastest (lowest inference latency)?}
+\textbf{Konteks (ID):} DNN (MLP 4-layer) paling cepat karena sederhana (0.0067 ms di INT8), tapi akurasinya buruk (72.6\%). Untuk model akurasi tinggi, DS-CNN adalah yang tercepat (0.1268 ms di INT8).\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"In absolute terms, the baseline DNN is the fastest at just 0.0067 milliseconds in INT8, but it achieves poor accuracy (72.6\%). Among high-accuracy models (>90\%), DS-CNN is the fastest, executing in just 0.1268 milliseconds under full-INT8 quantization."}
+\end{quote}
+\end{easybox}
+
+% Q6
+\begin{easybox}{Q6: Why Raspberry Pi 5? Why not the older Raspberry Pi 4?}
+\textbf{Konteks (ID):} Pi 5 mewakili arsitektur Cortex-A76 modern (2.4 GHz) dengan instruksi 64-bit Armv8.2-A dan fitur PMIC internal baru yang memungkinkan pengukuran daya SoC secara presisi tanpa alat eksternal.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"The Raspberry Pi 5 features modern Arm Cortex-A76 cores with 64-bit Armv8.2-A vector instructions, providing 2 to 3 times the compute throughput of the Pi 4. Additionally, its new internal PMIC telemetry allows direct on-chip energy measurement, making it an ideal representative 64-bit edge platform."}
+\end{quote}
+\end{easybox}
+
+% Q7
+\begin{easybox}{Q7: Are your trained models, code, and raw results publicly accessible?}
+\textbf{Konteks (ID):} 100\% Open Source dan Open Science! Lisensi GNU AGPLv3 di GitHub dan arsip permanen ber-DOI di Zenodo.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"Yes, absolutely. In accordance with open-science principles, our complete codebase, trained model weights, quantization scripts, and raw telemetry logs are open-sourced under the GNU AGPLv3 on GitHub and permanently archived on Zenodo with DOI 10.5281/zenodo.23765521."}
+\end{quote}
+\end{easybox}
+
+\newpage
+% =============================================================================
+\section*{\textcolor{TierOrangeBorder}{\Large Tier 2: Pertanyaan Sedang / Metodologis (Medium / Conference Typical)}}
+% =============================================================================
+Pertanyaan pada tingkatan ini mengevaluasi pemahaman metodologi, desain model, dan justifikasi eksperimen kalian.
+
+% Q8
+\begin{mediumbox}{Q8: Why specifically compare TensorFlow Lite (LiteRT) and ONNX Runtime?}
+\textbf{Konteks (ID):} Keduanya adalah dua runtime inferensi open-source paling populer di dunia industri edge. TinyML sering menganggap TFLite otomatis paling kencang di Arm, sedangkan komunitas ONNX membanggakan optimasi kernel fusion grafiknya.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"TensorFlow Lite (now rebranded by Google as LiteRT) and Microsoft's ONNX Runtime are the two dominant production engines for edge AI. TinyML practitioners routinely default to TFLite as the de facto Arm engine, while ONNX boasts aggressive cross-platform graph optimization. We wanted to rigorously test whether this default choice holds true across diverse topologies."}
+\end{quote}
+\end{mediumbox}
+
+% Q9
+\begin{mediumbox}{Q9: Why did you choose these specific 4 architectures (DS-CNN, DNN, LSTM, CRNN)?}
+\textbf{Konteks (ID):} Mereka mewakili 4 famili komputasi yang berbeda: CNN (konvolusi spasial/separable), DNN (dense linear algebra), LSTM (rekuren sekuensial murni), dan CRNN (hibrida konvolusi + temporal GRU).\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"We purposefully selected four distinct architectural paradigms: DS-CNN represents depthwise separable convolutions (the MLPerf Tiny benchmark); DNN serves as a dense feed-forward lower-bound anchor; LSTM represents pure temporal recurrence; and CRNN represents a hybrid spatial-temporal model. This diversity allowed us to identify which operator types favor which runtime engine."}
+\end{quote}
+\end{mediumbox}
+
+% Q10
+\begin{mediumbox}{Q10: Why did you evaluate both a 10-command subset and a 12-class full task?}
+\textbf{Konteks (ID):} Subset 10-command (4.074 clips) adalah standar perbandingan literatur TinyML terdahulu. Full 12-class task (12.005 clips) menguji ketahanan model terhadap 6.931 kata sembarang (unknown) dan 1.000 background silence seperti kondisi operasional dunia nyata.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"Many papers evaluate solely on the 10-command subset of 4,074 clips. While useful for direct comparison with prior literature, real-world deployment requires rejecting open-vocabulary chatter and silence. Evaluating the full 12,005-clip dataset revealed critical vulnerabilities, such as recurrent quantization degradation under noisy background speech."}
+\end{quote}
+\end{mediumbox}
+
+% Q11
+\begin{mediumbox}{Q11: How much latency speedup does full INT8 quantization provide over Float32?}
+\textbf{Konteks (ID):} INT8 memberikan percepatan antara 1.66$\times$ hingga 2.54$\times$ di seluruh model (contoh: DS-CNN dari 0.2107 ms ke 0.1268 ms, hemat 40\% waktu komputasi).\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"Full-INT8 post-training quantization yields an immediate 1.7 to 2.5 times speedup across all architectures. For example, DS-CNN accelerates from 0.2107 ms to 0.1268 ms, cutting execution time by nearly 40\% while maintaining 95.2\% full-task accuracy."}
+\end{quote}
+\end{mediumbox}
+
+% Q12
+\begin{mediumbox}{Q12: Why did LSTM suffer the largest accuracy degradation under INT8 quantization?}
+\textbf{Konteks (ID):} Akumulasi error pembulatan (compounding round-off noise) pada recurrent hidden state $h_t$ dan cell state $c_t$ sepanjang 49 time-steps. CNN membatasi error secara lokal per layer, sedangkan RNN mengakumulasikannya secara eksponensial tanpa QAT.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"In an unrolled LSTM, the recurrent hidden and cell states propagate sequentially across 49 time-steps. Under standard affine post-training quantization, small round-off errors accumulate dynamically at every recurrent transition, causing significant drift ($-$4.12 pts). Convolutions, by contrast, apply fixed feed-forward transforms that restrict quantization noise locally."}
+\end{quote}
+\end{mediumbox}
+
+% Q13
+\begin{mediumbox}{Q13: What audio front-end and feature representation did you employ?}
+\textbf{Konteks (ID):} MFCC (Mel-Frequency Cepstral Coefficients) berdimensi $49 \times 10 \times 1$. Audio 1 detik (16 kHz) dibagi menjadi frame window 40 ms dengan hop/stride 20 ms (menghasilkan 49 frame waktu), masing-masing dihitung 10 koefisien Mel.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"All four models ingest an identical 49-by-10 MFCC spectro-temporal tensor. For each 1-second 16 kHz audio clip, 40 ms analysis windows with 20 ms stride generate 49 time frames across 10 Mel-frequency bins, matching the official MLPerf Tiny front-end specification."}
+\end{quote}
+\end{mediumbox}
+
+\newpage
+% =============================================================================
+\section*{\textcolor{TierRedBorder}{\Large Tier 3: Pertanyaan Kritis \& Jebakan Teknis (Advanced / Gotcha Questions)}}
+% =============================================================================
+Pertanyaan pada tier ini biasanya diajukan oleh reviewer hardware/systems yang sangat teliti. Jika kamu bisa menjawab ini dengan tenang, audiens dan session chair akan sangat kagum!
+
+% Q14
+\begin{hardbox}{Q14: Why does ONNX Runtime win on DS-CNN in default, but lose when threads are pinned? (The Threadpool Confound)}
+\textbf{Konteks (ID):} Secara default, ONNX Runtime secara diam-diam membuat threadpool sebanyak jumlah core CPU (4 thread pada Pi 5), sedangkan TFLite default-nya 1 thread! Begitu diuji setara (iso-thread $T=1$), TFLite justru 2.07$\times$ lebih cepat dari ONNX di DS-CNN (0.2119 ms vs 0.4379 ms).\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"This is one of the primary discoveries of our paper. Out of the box, ONNX Runtime automatically instantiates an intra-op thread pool matching the host core count (4 cores), whereas TensorFlow Lite defaults to single-threaded execution ($T=1$). When we controlled this confound by explicitly pinning both runtimes to $T=1$, TensorFlow Lite was actually 2.07 times faster than ONNX on DS-CNN (0.2119 ms vs 0.4379 ms). The initial apparent advantage of ONNX was purely an artifact of 4 cores competing against 1 core."}
+\end{quote}
+\end{hardbox}
+
+% Q15
+\begin{hardbox}{Q15: How can you measure sub-millisecond energy consumption with the slow PMIC ADC? (The Sampling Rate Paradox)}
+\textbf{Konteks (ID):} Pertanyaan jebakan hardware! Kita TIDAK mengukur 1 kali inferensi secara terisolasi. Kita menjalankan loop kontinu 1.000 inferensi tanpa jeda hingga mencapai daya aktif steady-state ($P_{\text{active}}$), lalu dikurangi $P_{\text{idle}}$ untuk mendapat $\Delta P$. Energi dihitung dengan rumus integrasi: $E = \Delta P \times t_{\text{lat}}$.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"That is a perceptive systems question. We did not attempt single-shot sampling, which would indeed suffer from ADC aliasing. Instead, we executed a sustained continuous loop of 1,000 passes to drive the SoC into a measurable, steady-state active power plateau. We then derived the active delta power by subtracting baseline idle power, calculating energy per inference analytically via $E = P_\Delta \times t_\text{lat}$. This guarantees high physical fidelity without transient ADC aliasing."}
+\end{quote}
+\end{hardbox}
+
+% Q16
+\begin{hardbox}{Q16: What is the 'Power vs Energy Paradox' and the 'Race-to-Sleep' advantage?}
+\textbf{Konteks (ID):} TFLite menarik daya instan lebih tinggi (1.59W vs 1.18W) karena memeras CPU lebih intensif lewat kernel XNNPACK. Tapi karena inferensinya selesai 2$\times$ lebih cepat, total energi baterai yang dikonsumsi 35\% lebih hemat (0.34 mJ vs 0.53 mJ). Menyelesaikan komputasi secepat mungkin lalu segera tidur (idle) jauh lebih hemat baterai daripada komputasi santai berdaya rendah.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"Although TensorFlow Lite draws 35\% higher instantaneous active power than ONNX (1.59 W vs 1.18 W on DS-CNN), it finishes execution in less than half the time. Because energy is power integrated over time ($E = P \times t$), TFLite consumes 35\% less total energy per inference (0.34 mJ vs 0.53 mJ). This validates the 'Race-to-Sleep' paradigm: pushing the processor to finish bursts rapidly and return to low-power idle saves substantially more battery life than running at lower power for a longer duration."}
+\end{quote}
+\end{hardbox}
+
+% Q17
+\begin{hardbox}{Q17: Why didn't you benchmark with the Raspberry Pi AI Kit (Hailo-8L NPU) or GPU?}
+\textbf{Konteks (ID):} (1) Biaya: Hailo-8L butuh M.2 HAT seharga \$70, menggandakan harga sistem. (2) Karakteristik komputasi: Model KWS sangat mungil (20k-88k params). Latensi transfer bus PCIe DMA (~0.1-0.2 ms) justru bisa lebih lama daripada komputasi di CPU itu sendiri. CPU Cortex-A76 dengan SIMD NEON memberikan latensi deterministik tanpa overhead bus.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"While dedicated NPUs excel on large vision backbones, micro-scale audio models (20,000 to 50,000 parameters) suffer from host-to-device PCIe DMA transfer latency, which itself takes 0.1 to 0.2 ms. Running natively on the Cortex-A76 CPU with NEON SIMD eliminates bus overhead, ensures deterministic sub-millisecond latency, and avoids a \$70 hardware surcharge in cost-sensitive deployments."}
+\end{quote}
+\end{hardbox}
+
+% Q18
+\begin{hardbox}{Q18: Why did CRNN scale worse at 4 threads than at 2 threads under TFLite?}
+\textbf{Konteks (ID):} Model CRNN hanya memiliki 56.844 parameter dan latensi ~0.18 ms. Pada beban seringan ini, memecah matriks kecil ke 4 core menimbulkan overhead sinkronisasi thread (thread barrier, cache coherency, mutex) yang lebih mahal daripada kerja komputasinya sendiri.\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"CRNN is a compact model with only 56.8k parameters, executing in under 0.2 ms. At this sub-millisecond regime, dividing tiny matrix operations across four cores causes thread synchronization and cache-coherency overhead to exceed the parallel compute benefit. Consequently, 2 threads represents the empirical sweet spot before synchronization penalties dominate."}
+\end{quote}
+\end{hardbox}
+
+% Q19
+\begin{hardbox}{Q19: What was wrong with the official MLPerf Tiny DS-CNN model, and why did you reconstruct it?}
+\textbf{Konteks (ID):} Flatbuffer resmi MLPerf Tiny sebenarnya berformat mixed-precision (bobot konvolusi INT8, tapi operator dan layer sesudahnya FP32). Jika diekspor langsung ke ONNX, tercipta rantai operator dequantize yang lambat dan merusak keadilan benchmark. Kami merekonstruksi model Keras true-FP32 murni dari awal agar ekspor ke TFLite dan ONNX 100\% adil (*apple-to-apple*).\\
+\textbf{Spoken Script (EN):}
+\begin{quote}
+\small
+\textit{"When inspecting the official MLPerf Tiny submission (`kws\_ref\_model.tflite`), we discovered it was not a true float32 graph, but an intermediate mixed-precision artifact with INT8 conv kernels and FP32 auxiliary layers. Direct conversion to ONNX generated inefficient dequantize-re-quantize operator chains. We decompiled the topology, reconstructed a clean float32 Keras baseline matching the 22,604 parameter count exactly, and exported identical graphs to guarantee scientific fairness."}
+\end{quote}
+\end{hardbox}
+
+\newpage
+% =============================================================================
+\section*{\textcolor{NavyBlue}{\Large The Diplomatic Toolkit: 4 Trik \& Template Menjawab}}
+% =============================================================================
+
+Jika saat sesi live Q\&A kamu merasa gugup atau mendapat pertanyaan yang tidak kamu duga, gunakan formula di bawah ini:
+
+\begin{enumerate}[label=\textbf{\arabic*.}]
+  \item \textbf{Trik Mengulur Waktu 3 Detik (Untuk berpikir tanpa terlihat panik):}
+  \begin{quote}
+  \textit{"Thank you for that very thoughtful and insightful question. That addresses a crucial aspect of edge deployment..."}
+  \end{quote}
+
+  \item \textbf{Jika Pertanyaan Kurang Jelas atau Terlalu Cepat (Minta pengulangan dengan sopan):}
+  \begin{quote}
+  \textit{"Pardon me, could you please clarify whether you are referring to the post-training quantization stage or the runtime execution provider?"}
+  \end{quote}
+
+  \item \textbf{Jika Pertanyaan di Luar Lingkup Paper (Menolak tanpa terlihat bodoh):}
+  \begin{quote}
+  \textit{"That is an excellent direction for future work. In this specific study, our bounded scope was isolating CPU execution efficiency on the stock Raspberry Pi 5. Investigating [topic yang ditanyakan] would certainly provide valuable complementary insights in our next phase."}
+  \end{quote}
+
+  \item \textbf{Senjata Pamungkas: Merujuk ke Zenodo \& Open Science (Mematikan perdebatan teknis angka):}
+  \begin{quote}
+  \textit{"All our raw measurement JSON files, bootstrap seeds, and telemetry scripts are permanently archived on Zenodo under DOI 10.5281/zenodo.23765521. We invite you to review our open-source scripts on GitHub for the exact kernel dispatch details."}
+  \end{quote}
+\end{enumerate}
+
+\vspace{1.0em}
+\begin{center}
+  \textit{--- Good Luck with Your ICAITech 2026 Presentation! ---}
+\end{center}
+
+\end{document}
